@@ -1,0 +1,14 @@
+[package]
+name = "nes-emulator"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "nes_emulator"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nes-emulator"
+path = "src/bin/main.rs"
+
+[dependencies]
