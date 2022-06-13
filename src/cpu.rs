@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Default)]
 pub struct Cpu {
     register_a: u8,
@@ -44,5 +46,22 @@ impl Cpu {
         self.program_counter -= 1;
 
         old_value
+    }
+}
+
+impl Display for Cpu {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message = format!(
+            "CPU {{
+    register_a: {},
+    status: {},
+    program_counter: {}
+}}",
+            self.get_register_a(),
+            self.get_status(),
+            self.get_program_counter()
+        );
+
+        write!(f, "{}", message)
     }
 }
