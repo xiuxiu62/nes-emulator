@@ -30,22 +30,17 @@ impl<'a> Interpreter<'a> {
     pub fn interpret(&mut self) -> Result<()> {
         if self.source.is_none() {
             return Err(Error::NoSource("No source code has been loaded".to_owned()));
-        }
+        };
 
-        loop {
-            match self.get_current_opcode() {
-                Some(opcode) => {
-                    if opcode == 0x00 {
-                        break;
-                    }
-
-                    self.step(opcode)?
-                }
-                None => break,
+        while let Some(opcode) = self.get_current_opcode() {
+            if opcode == 0x00 {
+                break;
             }
+
+            self.step(opcode)?;
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn step(&mut self, opcode: u8) -> Result<()> {
@@ -68,7 +63,7 @@ impl<'a> Interpreter<'a> {
         self.source
             .unwrap()
             .get(self.cpu.get_program_counter() as usize)
-            .map(|opcode| *opcode)
+            .copied()
     }
 
     opcode!(oc_0xa9, "LDA", self {
