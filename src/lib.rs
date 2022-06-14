@@ -3,9 +3,7 @@ mod cpu;
 mod error;
 mod interpreter;
 mod ram;
-// mod addressing_mode;
 
-// pub use addressing_mode::AddressingMode;
 pub use component::Component;
 pub use cpu::Cpu;
 pub use error::{Error, Result};
