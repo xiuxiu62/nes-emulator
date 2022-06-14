@@ -2,11 +2,10 @@ use num::One;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Debug, Default)]
+#[repr(transparent)]
 pub struct Component<T>(T);
 
-impl<T: Copy + One + Min + Max + Add<Output = T> + Sub<Output = T> + Ord + PartialOrd>
-    Component<T>
-{
+impl<T: Copy + One + Min + Max + Ord + Add<Output = T> + Sub<Output = T>> Component<T> {
     pub fn new(value: T) -> Self {
         Self(value)
     }
@@ -22,13 +21,19 @@ impl<T: Copy + One + Min + Max + Add<Output = T> + Sub<Output = T> + Ord + Parti
     pub fn increment(&mut self) {
         if self.0 < <T as Max>::max() {
             *self += num::one();
+            return;
         }
+
+        self.set(<T as Min>::min());
     }
 
     pub fn decrement(&mut self) {
         if self.0 > <T as Min>::min() {
             *self -= num::one();
+            return;
         }
+
+        self.set(<T as Max>::max());
     }
 }
 
@@ -108,18 +113,18 @@ mod tests {
     }
 
     #[test]
-    fn component_cannot_underflow() {
+    fn component_can_underflow() {
         let mut component: Component<u8> = Component::new(u8::MIN);
         component.decrement();
 
-        assert_eq!(component.get(), u8::MIN)
+        assert_eq!(component.get(), u8::MAX)
     }
 
     #[test]
-    fn component_cannot_overflow() {
+    fn component_can_overflow() {
         let mut component: Component<u8> = Component::new(u8::MAX);
         component.increment();
 
-        assert_eq!(component.get(), u8::MAX)
+        assert_eq!(component.get(), u8::MIN)
     }
 }

@@ -1,8 +1,7 @@
-use crate::{Cpu, Error, Result};
+use crate::{ram::RAM_SIZE, Cpu, Error, Result};
 
 #[derive(Debug)]
 pub struct Interpreter<'a> {
-    source: Option<&'a [u8]>,
     cpu: &'a mut Cpu,
 }
 
@@ -23,70 +22,66 @@ macro_rules! opcode {
 }
 
 impl<'a> Interpreter<'a> {
-    pub fn new(source: Option<&'a [u8]>, cpu: &'a mut Cpu) -> Self {
-        Self { source, cpu }
+    pub fn new(cpu: &'a mut Cpu) -> Self {
+        Self { cpu }
     }
 
     pub fn load(&mut self, source: &'a [u8]) {
-        self.source = Some(source)
+        self.cpu.load_program(source);
+    }
+
+    pub fn mem_dump(&self) -> [u8; RAM_SIZE] {
+        self.cpu.mem_dump()
     }
 
     pub fn interpret(&mut self) -> Result<()> {
-        if self.source.is_none() {
-            return Err(Error::NoSource("No source code has been loaded".to_owned()));
-        };
+        loop {
+            let opcode = self.get_current_opcode();
+            self.cpu.program_counter.increment();
 
-        while let Some(opcode) = self.get_current_opcode() {
             if opcode == 0x00 {
-                break;
+                return Ok(());
             }
 
-            self.step(opcode)?;
+            self.handle_opcode(opcode)?;
         }
-
-        Ok(())
-    }
-
-    fn step(&mut self, opcode: u8) -> Result<()> {
-        self.cpu.program_counter.increment();
-
-        self.handle_opcode(opcode)
     }
 
     fn handle_opcode(&mut self, opcode: u8) -> Result<()> {
         match opcode {
             0xA9 => self.oc_0xa9(),
             0xAA => self.oc_0xaa(),
+            0xE8 => self.oc_0xe8(),
             code => Err(Error::UnsupportedOpcode(format!(
                 r#"opcode "{code:#x}" not supported"#
             ))),
         }
     }
 
-    // SAFETY: we've already ensured self.source is Some at the top of the interpret method
-    fn get_current_opcode(&self) -> Option<u8> {
-        self.source
-            .unwrap()
-            .get(self.cpu.program_counter.get() as usize)
-            .copied()
+    fn get_current_opcode(&self) -> u8 {
+        let program_counter = self.cpu.program_counter.get();
+        self.cpu.mem_read_byte(program_counter)
     }
 
     opcode![
-        (oc_0xa9, "LDA") => self {
-            match self.get_current_opcode() {
-                Some(param) => {
-                    self.cpu.program_counter.increment();
-                    self.cpu.register_a.set(param);
-                },
-                None => return Err(Error::ExpectedParameter(self.cpu.program_counter.get())),
-            };
+        (oc_0xa9, "LDA: loads data into the a register") => self {
+            let param = self.get_current_opcode();
+            self.cpu.program_counter.increment();
+            self.cpu.register_a.set(param);
 
             let register_a = self.cpu.register_a.get();
             self.cpu.update_zero_flag(register_a);
             self.cpu.update_negative_flag(register_a);
         },
-        (oc_0xaa, "TAX") => self {
+        (oc_0xaa, "TAX: copies the a register into the x register") => self {
             self.cpu.register_x.set(self.cpu.register_a.get());
+
+            let register_x = self.cpu.register_x.get();
+            self.cpu.update_zero_flag(register_x);
+            self.cpu.update_negative_flag(register_x);
+        },
+        (oc_0xe8, "INX: increments the x register") => self {
+            self.cpu.register_x.increment();
 
             let register_x = self.cpu.register_x.get();
             self.cpu.update_zero_flag(register_x);
