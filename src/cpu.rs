@@ -1,11 +1,26 @@
 use std::fmt::Display;
 
-use crate::{ram::RAM_SIZE, Component, Ram};
+use crate::{ram::RAM_SIZE, Component, Error, Ram, Result};
+
+#[derive(Debug)]
+pub enum AddressingMode {
+    Immediate,
+    ZeroPage,
+    ZeroPageX,
+    ZeroPageY,
+    Absolute,
+    AbsoluteX,
+    AbsoluteY,
+    IndirectX,
+    IndirectY,
+    NoneAddressing,
+}
 
 #[derive(Debug, Default)]
 pub struct Cpu {
     pub register_a: Component<u8>,
     pub register_x: Component<u8>,
+    pub register_y: Component<u8>,
     pub status: Component<u8>,
     pub program_counter: Component<u16>,
     memory: Ram,
@@ -29,6 +44,17 @@ impl Cpu {
 
         let start_addr = self.mem_read_word(0xFFFC);
         self.program_counter.set(start_addr);
+    }
+
+    pub fn lda(&mut self, mode: AddressingMode) -> Result<()> {
+        let addr = self.get_operand_address(&mode)?;
+        let value = self.mem_read_byte(addr);
+
+        self.register_a.set(value);
+        self.update_zero_flag(value);
+        self.update_negative_flag(value);
+
+        Ok(())
     }
 
     pub fn mem_read_byte(&self, addr: u16) -> u8 {
@@ -72,6 +98,61 @@ impl Cpu {
             0 => old_status & 0b0111_1111,
             _ => old_status | 0b1000_0000,
         });
+    }
+
+    fn get_operand_address(&self, mode: &AddressingMode) -> Result<u16> {
+        match mode {
+            AddressingMode::Immediate => Ok(self.program_counter.get()),
+            AddressingMode::ZeroPage => Ok(self.mem_read_byte(self.program_counter.get()) as u16),
+            AddressingMode::Absolute => Ok(self.mem_read_word(self.program_counter.get())),
+            AddressingMode::ZeroPageX => {
+                let pos = self.mem_read_byte(self.program_counter.get());
+                let addr = pos.wrapping_add(self.register_x.get()) as u16;
+
+                Ok(addr)
+            }
+            AddressingMode::ZeroPageY => {
+                let pos = self.mem_read_byte(self.program_counter.get());
+                let addr = pos.wrapping_add(self.register_y.get()) as u16;
+
+                Ok(addr)
+            }
+            AddressingMode::AbsoluteX => {
+                let base = self.mem_read_word(self.program_counter.get());
+                let addr = base.wrapping_add(self.register_x.get() as u16);
+
+                Ok(addr)
+            }
+            AddressingMode::AbsoluteY => {
+                let base = self.mem_read_word(self.program_counter.get());
+                let addr = base.wrapping_add(self.register_y.get() as u16);
+
+                Ok(addr)
+            }
+
+            AddressingMode::IndirectX => {
+                let base = self.mem_read_byte(self.program_counter.get());
+
+                let ptr: u8 = (base as u8).wrapping_add(self.register_x.get());
+                let lo = self.mem_read_byte(ptr as u16);
+                let hi = self.mem_read_byte(ptr.wrapping_add(1) as u16);
+
+                Ok((hi as u16) << 8 | (lo as u16))
+            }
+            AddressingMode::IndirectY => {
+                let base = self.mem_read_byte(self.program_counter.get());
+
+                let lo = self.mem_read_byte(base as u16);
+                let hi = self.mem_read_byte((base as u8).wrapping_add(1) as u16);
+                let deref_base = (hi as u16) << 8 | (lo as u16);
+                let deref = deref_base.wrapping_add(self.register_y.get() as u16);
+
+                Ok(deref)
+            }
+            AddressingMode::NoneAddressing => Err(Error::Unsupported(format!(
+                "addressing mode {mode:?} is not supported"
+            ))),
+        }
     }
 }
 

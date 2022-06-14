@@ -4,8 +4,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-    NoSource(String),
-    UnsupportedOpcode(String),
+    Unsupported(String),
     ExpectedParameter(u16),
 }
 

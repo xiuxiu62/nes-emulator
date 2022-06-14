@@ -1,4 +1,4 @@
-use crate::{ram::RAM_SIZE, Cpu, Error, Result};
+use crate::{cpu::AddressingMode, ram::RAM_SIZE, Cpu, Error, Result};
 
 #[derive(Debug)]
 pub struct Interpreter<'a> {
@@ -50,10 +50,12 @@ impl<'a> Interpreter<'a> {
     fn handle_opcode(&mut self, opcode: u8) -> Result<()> {
         match opcode {
             0xA9 => self.oc_0xa9(),
+            0xA5 => self.oc_0xa5(),
+            0xAD => self.oc_0xad(),
             0xAA => self.oc_0xaa(),
             0xE8 => self.oc_0xe8(),
-            code => Err(Error::UnsupportedOpcode(format!(
-                r#"opcode "{code:#x}" not supported"#
+            code => Err(Error::Unsupported(format!(
+                r#"opcode "{code:#x}" is not supported"#
             ))),
         }
     }
@@ -64,14 +66,17 @@ impl<'a> Interpreter<'a> {
     }
 
     opcode![
-        (oc_0xa9, "LDA: loads data into the a register") => self {
-            let param = self.get_current_opcode();
+        (oc_0xa9, "LDA (Immediate Mode)") => self {
+            self.cpu.lda(AddressingMode::Immediate)?;
             self.cpu.program_counter.increment();
-            self.cpu.register_a.set(param);
-
-            let register_a = self.cpu.register_a.get();
-            self.cpu.update_zero_flag(register_a);
-            self.cpu.update_negative_flag(register_a);
+        },
+        (oc_0xa5, "LDA (Zero Page Mode)") => self {
+            self.cpu.lda(AddressingMode::ZeroPage)?;
+            self.cpu.program_counter.increment();
+        },
+        (oc_0xad, "LDA (Absolute Mode)") => self {
+            self.cpu.lda(AddressingMode::Absolute)?;
+            (0..2).for_each(|_| self.cpu.program_counter.increment());
         },
         (oc_0xaa, "TAX: copies the a register into the x register") => self {
             self.cpu.register_x.set(self.cpu.register_a.get());
