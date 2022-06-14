@@ -56,6 +56,7 @@ impl<'a> Interpreter<'a> {
     fn handle_opcode(&mut self, opcode: u8) -> Result<()> {
         match opcode {
             0xA9 => self.oc_0xa9(),
+            0xAA => self.oc_0xaa(),
             code => Err(Error::UnsupportedOpcode(format!(
                 r#"opcode "{code:#x}" not supported"#
             ))),
@@ -81,19 +82,15 @@ impl<'a> Interpreter<'a> {
             };
 
             let register_a = self.cpu.register_a.get();
-            let mut status = self.cpu.status.get();
+            self.cpu.update_zero_flag(register_a);
+            self.cpu.update_negative_flag(register_a);
+        },
+        (oc_0xaa, "TAX") => self {
+            self.cpu.register_x.set(self.cpu.register_a.get());
 
-            status = match register_a  {
-                0 => status | 0b0000_0010,
-                _ => status & 0b1111_1101,
-            };
-
-            status = match register_a & 0b1000_0000 {
-                0 => status & 0b0111_1111,
-                _ => status | 0b1000_0000,
-            };
-
-            self.cpu.status.set(status);
+            let register_x = self.cpu.register_x.get();
+            self.cpu.update_zero_flag(register_x);
+            self.cpu.update_negative_flag(register_x);
         }
     ];
 }
