@@ -1,7 +1,9 @@
+mod component;
 mod cpu;
 mod error;
 mod interpreter;
 
+pub use component::Component;
 pub use cpu::Cpu;
 pub use error::{Error, Result};
 pub use interpreter::Interpreter;
