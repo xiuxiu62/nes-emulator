@@ -19,7 +19,7 @@ mod test {
 
         interpreter.interpret()?;
 
-        Ok((cpu.get_register_a(), cpu.get_status()))
+        Ok((cpu.register_a.get(), cpu.status.get()))
     }
 
     #[test]

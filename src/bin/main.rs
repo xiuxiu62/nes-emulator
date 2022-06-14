@@ -2,8 +2,8 @@ use nes_emulator::{Cpu, Interpreter};
 
 fn main() -> nes_emulator::Result<()> {
     let source = vec![0xa9, 0x01];
-
     let cpu = interpret(&source)?;
+
     println!("{cpu}");
 
     Ok(())

@@ -8,14 +8,18 @@ pub struct Interpreter<'a> {
 
 // Implements an opcode handler for Interpreter<'a>
 macro_rules! opcode {
-    ($id:ident, $doc_id:expr, $self:ident $f:block) => {
-        #[doc=$doc_id]
+    ($id:ident, $doc_string:expr, $self:ident $f:block) => {
+        #[doc=$doc_string]
         pub fn $id(&mut $self) -> Result<()> {
             $f();
 
             Ok(())
         }
     };
+
+    [$(($id:ident, $doc_string:expr) => $self:ident $f:block),*] => {
+        $(opcode!($id, $doc_string, $self $f);)*
+    }
 }
 
 impl<'a> Interpreter<'a> {
@@ -44,7 +48,7 @@ impl<'a> Interpreter<'a> {
     }
 
     fn step(&mut self, opcode: u8) -> Result<()> {
-        self.cpu.increment_program_counter();
+        self.cpu.program_counter.increment();
 
         self.handle_opcode(opcode)
     }
@@ -62,32 +66,34 @@ impl<'a> Interpreter<'a> {
     fn get_current_opcode(&self) -> Option<u8> {
         self.source
             .unwrap()
-            .get(self.cpu.get_program_counter() as usize)
+            .get(self.cpu.program_counter.get() as usize)
             .copied()
     }
 
-    opcode!(oc_0xa9, "LDA", self {
-        match self.get_current_opcode() {
-            Some(param) => {
-                self.cpu.increment_program_counter();
-                self.cpu.set_register_a(param);
-            },
-            None => return Err(Error::ExpectedParameter(self.cpu.get_program_counter())),
-        };
+    opcode![
+        (oc_0xa9, "LDA") => self {
+            match self.get_current_opcode() {
+                Some(param) => {
+                    self.cpu.program_counter.increment();
+                    self.cpu.register_a.set(param);
+                },
+                None => return Err(Error::ExpectedParameter(self.cpu.program_counter.get())),
+            };
 
-        let register_a = self.cpu.get_register_a();
-        let mut status = self.cpu.get_status();
+            let register_a = self.cpu.register_a.get();
+            let mut status = self.cpu.status.get();
 
-        status = match register_a  {
-            0 => status | 0b0000_0010,
-            _ => status & 0b1111_1101,
-        };
+            status = match register_a  {
+                0 => status | 0b0000_0010,
+                _ => status & 0b1111_1101,
+            };
 
-        status = match register_a & 0b1000_0000 {
-            0 => status & 0b0111_1111,
-            _ => status | 0b1000_0000,
-        };
+            status = match register_a & 0b1000_0000 {
+                0 => status & 0b0111_1111,
+                _ => status | 0b1000_0000,
+            };
 
-        self.cpu.set_status(status);
-    });
+            self.cpu.status.set(status);
+        }
+    ];
 }

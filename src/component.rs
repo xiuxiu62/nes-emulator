@@ -1,7 +1,7 @@
 use num::One;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Component<T>(T);
 
 impl<T: Copy + One + Min + Max + Add<Output = T> + Sub<Output = T> + Ord + PartialOrd>
