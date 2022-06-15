@@ -35,6 +35,10 @@ impl<T: Copy + One + Min + Max + Ord + Add<Output = T> + Sub<Output = T>> Compon
 
         self.set(<T as Max>::max());
     }
+
+    pub fn reset(&mut self) {
+        self.set(<T as Min>::min())
+    }
 }
 
 impl<T: Add<Output = T>> Add<T> for Component<T> {
