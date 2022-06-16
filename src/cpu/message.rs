@@ -1,4 +1,4 @@
-pub enum Message {
+pub enum CpuMessage {
     Break,
     Halt,
     Continue,

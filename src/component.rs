@@ -1,41 +1,60 @@
-use num::One;
+use num::{
+    traits::{WrappingAdd, WrappingSub},
+    One,
+};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Debug, Default)]
 #[repr(transparent)]
 pub struct Component<T>(T);
 
-impl<T: Copy + One + Min + Max + Ord + Add<Output = T> + Sub<Output = T>> Component<T> {
+impl<T> Component<T>
+where
+    T: Copy
+        + One
+        + Min
+        + Max
+        + Ord
+        + Add<Output = T>
+        + Sub<Output = T>
+        + WrappingAdd<Output = T>
+        + WrappingSub<Output = T>,
+{
+    #[inline]
     pub fn new(value: T) -> Self {
         Self(value)
     }
 
+    #[inline]
     pub fn get(&self) -> T {
         self.0
     }
 
+    #[inline]
     pub fn set(&mut self, value: T) {
         self.0 = value;
     }
 
+    #[inline]
     pub fn increment(&mut self) {
-        if self.0 < <T as Max>::max() {
-            *self += num::one();
-            return;
-        }
-
-        self.set(<T as Min>::min());
+        self.wrapping_add(num::one());
     }
 
+    #[inline]
     pub fn decrement(&mut self) {
-        if self.0 > <T as Min>::min() {
-            *self -= num::one();
-            return;
-        }
-
-        self.set(<T as Max>::max());
+        self.wrapping_sub(num::one());
     }
 
+    #[inline]
+    pub fn wrapping_add(&mut self, value: T) {
+        self.set(self.0.wrapping_add(&value));
+    }
+
+    #[inline]
+    pub fn wrapping_sub(&mut self, value: T) {
+        self.set(self.0.wrapping_sub(&value));
+    }
+    #[inline]
     pub fn reset(&mut self) {
         self.set(<T as Min>::min())
     }

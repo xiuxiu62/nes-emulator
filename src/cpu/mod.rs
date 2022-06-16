@@ -1,4 +1,5 @@
 mod addressing_mode;
+mod flags;
 mod message;
 mod opcode;
 
@@ -7,15 +8,17 @@ use opcode::OPCODE_MAP;
 use std::fmt::Display;
 
 pub use addressing_mode::AddressingMode;
-pub use message::Message;
+pub use flags::CpuFlags;
+pub use message::CpuMessage;
 
 #[derive(Debug, Default)]
 pub struct Cpu {
     register_a: Component<u8>,
     register_x: Component<u8>,
     register_y: Component<u8>,
-    status: Component<u8>,
     program_counter: Component<u16>,
+    stack_pointer: Component<u8>,
+    pub status: CpuFlags,
     memory: Ram,
 }
 
@@ -40,7 +43,7 @@ impl Cpu {
                 Error::Unsupported(format!(r#"opcode "{code:#x}" is not supported"#))
             })?;
 
-            if let Message::Break = self.handle_opcode(opcode)? {
+            if let CpuMessage::Break = self.handle_opcode(opcode)? {
                 break;
             }
 
@@ -65,6 +68,7 @@ impl Cpu {
     pub fn mem_dump(&self) -> [u8; RAM_SIZE] {
         self.memory.dump()
     }
+
     fn mem_read_byte(&self, addr: u16) -> u8 {
         self.memory.read(addr)
     }
@@ -89,19 +93,17 @@ impl Cpu {
     }
 
     fn update_zero_flag(&mut self, result: u8) {
-        let old_status = self.status.get();
-        self.status.set(match result {
-            0 => old_status | 0b0000_0010,
-            _ => old_status & 0b1111_1101,
-        });
+        match result {
+            0 => self.status.insert(CpuFlags::ZERO),
+            _ => self.status.remove(CpuFlags::ZERO),
+        };
     }
 
     fn update_negative_flag(&mut self, result: u8) {
-        let old_status = self.status.get();
-        self.status.set(match result & 0b1000_0000 {
-            0 => old_status & 0b0111_1111,
-            _ => old_status | 0b1000_0000,
-        });
+        match result & 0b1000_0000 {
+            0 => self.status.remove(CpuFlags::NEGATIVE),
+            _ => self.status.insert(CpuFlags::NEGATIVE),
+        };
     }
 }
 
@@ -112,14 +114,18 @@ impl Display for Cpu {
     registers: {{
         a: {:#x}
         x: {:#x}            
+        y: {:#x}
     }}
-    status: {:#x}
     program_counter: {:#x}
+    stack_pointer: {:#x}
+    status: {:#x}
 }}",
             self.register_a.get(),
             self.register_x.get(),
-            self.status.get(),
+            self.register_y.get(),
             self.program_counter.get(),
+            self.stack_pointer.get(),
+            self.status,
         );
 
         write!(f, "{}", message)

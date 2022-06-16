@@ -1,15 +1,15 @@
 mod component;
 mod cpu;
 mod error;
-// mod interpreter;
 mod ram;
 
 pub use component::Component;
 pub use cpu::Cpu;
 pub use error::{Error, Result};
-// pub use interpreter::Interpreter;
 pub use ram::Ram;
 
+#[macro_use]
+extern crate bitflags;
 #[macro_use]
 extern crate lazy_static;
 
