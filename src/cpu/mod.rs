@@ -34,6 +34,13 @@ impl Cpu {
     }
 
     pub fn run(&mut self) -> Result<()> {
+        self.run_with_callback(|_| {})
+    }
+
+    pub fn run_with_callback<F>(&mut self, mut callback: F) -> Result<()>
+    where
+        F: FnMut(&mut Cpu),
+    {
         loop {
             let code = self.mem_read_byte(self.program_counter.get());
 
@@ -50,6 +57,8 @@ impl Cpu {
             if program_counter_state == self.program_counter.get() {
                 (0..(opcode.len() - 1) as u16).for_each(|_| self.program_counter.increment())
             }
+
+            callback(self)
         }
 
         Ok(())
@@ -69,22 +78,22 @@ impl Cpu {
         self.memory.dump()
     }
 
-    fn mem_read_byte(&self, addr: u16) -> u8 {
+    pub fn mem_read_byte(&self, addr: u16) -> u8 {
         self.memory.read(addr)
     }
 
-    fn mem_write_byte(&mut self, addr: u16, byte: u8) {
+    pub fn mem_write_byte(&mut self, addr: u16, byte: u8) {
         self.memory.write(addr, byte);
     }
 
-    fn mem_read_word(&self, addr: u16) -> u16 {
+    pub fn mem_read_word(&self, addr: u16) -> u16 {
         let lo = self.mem_read_byte(addr) as u16;
         let hi = self.mem_read_byte(addr + 1) as u16;
 
         hi << 8 | lo
     }
 
-    fn mem_write_word(&mut self, addr: u16, word: u16) {
+    pub fn mem_write_word(&mut self, addr: u16, word: u16) {
         let lo = (word & 0xff) as u8;
         let hi = (word >> 8) as u8;
 

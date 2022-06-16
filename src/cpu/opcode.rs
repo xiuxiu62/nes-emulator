@@ -3,7 +3,7 @@ use crate::{Error, Result};
 use std::collections::HashMap;
 
 const STACK_START_ADDR: u16 = 0x0100;
-const STACK_RESET: u8 = 0xFD;
+// const STACK_RESET: u8 = 0xFD;
 
 #[allow(unused)]
 pub struct OpCode {
@@ -264,7 +264,7 @@ impl Cpu {
             0x08 => self.php(),
             0x28 => self.plp(),
             0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => self.adc(&opcode.mode)?,
-            0xE9 | 0xE5 | 0xF5 | 0xED | 0xfD | 0xf9 | 0xe1 | 0xf1 => self.sbc(&opcode.mode)?,
+            0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => self.sbc(&opcode.mode)?,
             0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => self.and(&opcode.mode)?,
             0x49 | 0x45 | 0x55 | 0x4D | 0x5D | 0x59 | 0x41 | 0x51 => self.eor(&opcode.mode)?,
             0x09 | 0x05 | 0x15 | 0x0D | 0x1D | 0x19 | 0x01 | 0x11 => self.ora(&opcode.mode)?,
@@ -700,7 +700,7 @@ impl Cpu {
     }
 
     fn php(&mut self) {
-        let mut flags = self.status.clone();
+        let mut flags = self.status;
 
         flags.insert(CpuFlags::BREAK);
         flags.insert(CpuFlags::BREAK2);

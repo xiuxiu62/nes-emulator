@@ -1,10 +1,12 @@
 use nes_emulator::Cpu;
+use rand::Rng;
+use sdl2::{event::Event, keyboard::Keycode, pixels::Color, pixels::PixelFormatEnum, EventPump};
 
 #[macro_use]
 extern crate lazy_static;
 
 lazy_static! {
-    static ref GAME: Vec<u8> = vec![
+    static ref GAME_CODE: Vec<u8> = vec![
         0x20, 0x06, 0x06, 0x20, 0x38, 0x06, 0x20, 0x0d, 0x06, 0x20, 0x2a, 0x06, 0x60, 0xa9, 0x02,
         0x85, 0x02, 0xa9, 0x04, 0x85, 0x03, 0xa9, 0x11, 0x85, 0x10, 0xa9, 0x10, 0x85, 0x12, 0xa9,
         0x0f, 0x85, 0x14, 0xa9, 0x04, 0x85, 0x11, 0x85, 0x13, 0x85, 0x15, 0x60, 0xa5, 0xfe, 0x85,
@@ -25,22 +27,111 @@ lazy_static! {
         0xb0, 0x01, 0x60, 0xe6, 0x11, 0xa9, 0x06, 0xc5, 0x11, 0xf0, 0x0c, 0x60, 0xc6, 0x10, 0xa5,
         0x10, 0x29, 0x1f, 0xc9, 0x1f, 0xf0, 0x01, 0x60, 0x4c, 0x35, 0x07, 0xa0, 0x00, 0xa5, 0xfe,
         0x91, 0x00, 0x60, 0xa6, 0x03, 0xa9, 0x00, 0x81, 0x10, 0xa2, 0x00, 0xa9, 0x01, 0x81, 0x10,
-        0x60, 0xa2, 0x00, 0xea, 0xea, 0xca, 0xd0, 0xfb, 0x60,
+        0x60, 0xa6, 0xff, 0xea, 0xea, 0xca, 0xd0, 0xfb, 0x60,
     ];
 }
 
-fn main() -> nes_emulator::Result<()> {
-    let cpu = interpret(&GAME)?;
-
-    println!("{cpu}");
-
-    Ok(())
+fn color(byte: u8) -> Color {
+    match byte {
+        0 => sdl2::pixels::Color::BLACK,
+        1 => sdl2::pixels::Color::WHITE,
+        2 | 9 => sdl2::pixels::Color::GREY,
+        3 | 10 => sdl2::pixels::Color::RED,
+        4 | 11 => sdl2::pixels::Color::GREEN,
+        5 | 12 => sdl2::pixels::Color::BLUE,
+        6 | 13 => sdl2::pixels::Color::MAGENTA,
+        7 | 14 => sdl2::pixels::Color::YELLOW,
+        _ => sdl2::pixels::Color::CYAN,
+    }
 }
 
-fn interpret(source: &[u8]) -> nes_emulator::Result<Cpu> {
-    let mut cpu = Cpu::default();
-    cpu.load_program(source);
-    cpu.run()?;
+fn read_screen_state(cpu: &Cpu, frame: &mut [u8; 32 * 3 * 32]) -> bool {
+    let mut frame_idx = 0;
+    let mut update = false;
+    for i in 0x0200..0x600 {
+        let color_idx = cpu.mem_read_byte(i as u16);
+        let (b1, b2, b3) = color(color_idx).rgb();
+        if frame[frame_idx] != b1 || frame[frame_idx + 1] != b2 || frame[frame_idx + 2] != b3 {
+            frame[frame_idx] = b1;
+            frame[frame_idx + 1] = b2;
+            frame[frame_idx + 2] = b3;
+            update = true;
+        }
+        frame_idx += 3;
+    }
+    update
+}
 
-    Ok(cpu)
+fn handle_user_input(cpu: &mut Cpu, event_pump: &mut EventPump) {
+    for event in event_pump.poll_iter() {
+        match event {
+            Event::Quit { .. }
+            | Event::KeyDown {
+                keycode: Some(Keycode::Escape),
+                ..
+            } => std::process::exit(0),
+            Event::KeyDown {
+                keycode: Some(Keycode::W),
+                ..
+            } => cpu.mem_write_byte(0xff, 0x77),
+            Event::KeyDown {
+                keycode: Some(Keycode::S),
+                ..
+            } => cpu.mem_write_byte(0xff, 0x73),
+            Event::KeyDown {
+                keycode: Some(Keycode::A),
+                ..
+            } => cpu.mem_write_byte(0xff, 0x61),
+            Event::KeyDown {
+                keycode: Some(Keycode::D),
+                ..
+            } => cpu.mem_write_byte(0xff, 0x64),
+            _ => {}
+        }
+    }
+}
+
+fn main() -> nes_emulator::Result<()> {
+    // init sdl2
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
+    let window = video_subsystem
+        .window("Snake game", (32.0 * 10.0) as u32, (32.0 * 10.0) as u32)
+        .position_centered()
+        .build()
+        .unwrap();
+
+    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
+    let mut event_pump = sdl_context.event_pump().unwrap();
+    canvas.set_scale(10.0, 10.0).unwrap();
+
+    let creator = canvas.texture_creator();
+    let mut texture = creator
+        .create_texture_target(PixelFormatEnum::RGB24, 32, 32)
+        .unwrap();
+
+    //load the game
+    let mut cpu = Cpu::default();
+    cpu.load_program(&GAME_CODE);
+    cpu.reset();
+
+    let mut screen_state = [0_u8; 32 * 32 * 3];
+    let mut rng = rand::thread_rng();
+
+    // run the game cycle
+    cpu.run_with_callback(move |cpu| {
+        handle_user_input(cpu, &mut event_pump);
+
+        cpu.mem_write_byte(0xFE, rng.gen_range(1..16));
+
+        if read_screen_state(cpu, &mut screen_state) {
+            texture.update(None, &screen_state, 32 * 3).unwrap();
+
+            canvas.copy(&texture, None, None).unwrap();
+
+            canvas.present();
+        }
+
+        ::std::thread::sleep(std::time::Duration::new(0, 70_000));
+    })
 }
