@@ -1,9 +1,10 @@
-use crate::{Error, Ram, Result, Rom};
+use crate::{
+    components::{Ram, Rom},
+    error::{Error, Result},
+    io::{Read, Write},
+};
 
-mod io;
-
-pub use io::{BusRead, BusWrite};
-
+#[allow(unused)]
 pub struct Bus<'a> {
     rom: &'a Rom,
     ram: &'a mut Ram,
@@ -36,7 +37,7 @@ impl<'a> Bus<'a> {
     }
 }
 
-impl<'a> BusRead for Bus<'a> {
+impl<'a> Read for Bus<'a> {
     fn read_byte(&self, addr: u16) -> Result<u8> {
         match addr {
             0x0000..=0x1FFF => todo!("self.ram.read_byte(addr & 0x07FF)"),
@@ -66,7 +67,7 @@ impl<'a> BusRead for Bus<'a> {
     }
 }
 
-impl<'a> BusWrite for Bus<'a> {
+impl<'a> Write for Bus<'a> {
     fn write_byte(&mut self, addr: u16, _byte: u8) -> Result<()> {
         match addr {
             0x0000..=0x1FFF => todo!("self.ram.write_byte(addr & 0x07FF, byte)"),

@@ -1,4 +1,7 @@
-use crate::{BusRead, BusWrite, Result};
+use crate::{
+    error::Result,
+    io::{Read, Write},
+};
 use std::fmt::Display;
 
 pub const RAM_SIZE: usize = 0xFFFF;
@@ -30,7 +33,7 @@ impl Default for Ram {
     }
 }
 
-impl BusRead for Ram {
+impl Read for Ram {
     fn read_byte(&self, addr: u16) -> Result<u8> {
         Ok(self.0[addr as usize])
     }
@@ -43,7 +46,7 @@ impl BusRead for Ram {
     }
 }
 
-impl BusWrite for Ram {
+impl Write for Ram {
     fn write_byte(&mut self, addr: u16, byte: u8) -> Result<()> {
         self.0[addr as usize] = byte;
 

@@ -3,7 +3,10 @@ mod flags;
 mod message;
 mod opcode;
 
-use crate::{ram::RAM_SIZE, Component, Error, Ram, Result, Rom};
+use crate::{
+    components::{ram::RAM_SIZE, Ram, Rom, SubComponent},
+    error::{Error, Result},
+};
 use opcode::OPCODE_MAP;
 use std::fmt::Display;
 
@@ -13,17 +16,17 @@ pub use message::CpuMessage;
 
 #[derive(Debug, Default)]
 pub struct Cpu {
-    pub(crate) register_a: Component<u8>,
-    pub(crate) register_x: Component<u8>,
-    pub(crate) register_y: Component<u8>,
-    pub(crate) program_counter: Component<u16>,
-    pub(crate) stack_pointer: Component<u8>,
+    pub(crate) register_a: SubComponent<u8>,
+    pub(crate) register_x: SubComponent<u8>,
+    pub(crate) register_y: SubComponent<u8>,
+    pub(crate) program_counter: SubComponent<u16>,
+    pub(crate) stack_pointer: SubComponent<u8>,
     pub(crate) status: CpuFlags,
     pub(crate) memory: Ram,
 }
 
 impl Cpu {
-    pub fn load_program(&mut self, rom: &Rom) {
+    pub fn load_rom(&mut self, rom: &Rom) {
         self.load(0x8000, rom);
     }
 

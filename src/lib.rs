@@ -1,17 +1,6 @@
-mod component;
-mod cpu;
-mod error;
-mod ram;
-#[macro_use]
-mod rom;
-mod bus;
-
-pub use bus::{Bus, BusRead, BusWrite};
-pub use component::Component;
-pub use cpu::Cpu;
-pub use error::{Error, Result};
-pub use ram::Ram;
-pub use rom::Rom;
+pub mod components;
+pub mod error;
+pub mod io;
 
 #[macro_use]
 extern crate bitflags;
@@ -21,12 +10,16 @@ extern crate lazy_static;
 
 #[cfg(test)]
 mod test {
-    use super::{Cpu, Result, Rom};
+    use super::{
+        components::{Cpu, Rom},
+        error::Result,
+        rom,
+    };
 
-    // Interprets the source code and returns the Cpu
+    // Executes the Rom and returns the Cpu
     fn run(rom: &Rom) -> Result<Cpu> {
         let mut cpu = Cpu::default();
-        cpu.load_program(rom);
+        cpu.load_rom(rom);
         cpu.run()?;
 
         Ok(cpu)

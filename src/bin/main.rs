@@ -1,4 +1,7 @@
-use nes_emulator::{rom, Cpu, Rom};
+use nes_emulator::{
+    components::{Cpu, Rom},
+    rom,
+};
 
 #[macro_use]
 extern crate lazy_static;
@@ -29,16 +32,16 @@ lazy_static! {
     ];
 }
 
-fn main() -> nes_emulator::Result<()> {
+fn main() -> nes_emulator::error::Result<()> {
     let cpu = run(&GAME_CODE)?;
     println!("{cpu}");
 
     Ok(())
 }
 
-fn run(rom: &Rom) -> nes_emulator::Result<Cpu> {
+fn run(rom: &Rom) -> nes_emulator::error::Result<Cpu> {
     let mut cpu = Cpu::default();
-    cpu.load_program(rom);
+    cpu.load_rom(rom);
     cpu.run()?;
 
     Ok(cpu)

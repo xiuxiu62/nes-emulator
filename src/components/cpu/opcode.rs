@@ -1,5 +1,5 @@
 use super::{AddressingMode, Cpu, CpuFlags, CpuMessage};
-use crate::{Error, Result};
+use crate::error::{Error, Result};
 use std::collections::HashMap;
 
 const STACK_START_ADDR: u16 = 0x0100;

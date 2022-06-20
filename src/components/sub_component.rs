@@ -6,9 +6,9 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Debug, Default)]
 #[repr(transparent)]
-pub struct Component<T>(T);
+pub struct SubComponent<T>(T);
 
-impl<T> Component<T>
+impl<T> SubComponent<T>
 where
     T: Copy
         + One
@@ -60,7 +60,7 @@ where
     }
 }
 
-impl<T: Add<Output = T>> Add<T> for Component<T> {
+impl<T: Add<Output = T>> Add<T> for SubComponent<T> {
     type Output = T;
 
     fn add(self, rhs: T) -> Self::Output {
@@ -68,13 +68,13 @@ impl<T: Add<Output = T>> Add<T> for Component<T> {
     }
 }
 
-impl<T: Copy + Add<Output = T>> AddAssign<T> for Component<T> {
+impl<T: Copy + Add<Output = T>> AddAssign<T> for SubComponent<T> {
     fn add_assign(&mut self, rhs: T) {
         *self = Self(self.0 + rhs);
     }
 }
 
-impl<T: Sub<Output = T>> Sub<T> for Component<T> {
+impl<T: Sub<Output = T>> Sub<T> for SubComponent<T> {
     type Output = T;
 
     fn sub(self, rhs: T) -> Self::Output {
@@ -82,7 +82,7 @@ impl<T: Sub<Output = T>> Sub<T> for Component<T> {
     }
 }
 
-impl<T: Copy + Sub<Output = T>> SubAssign<T> for Component<T> {
+impl<T: Copy + Sub<Output = T>> SubAssign<T> for SubComponent<T> {
     fn sub_assign(&mut self, rhs: T) {
         *self = Self(self.0 - rhs);
     }
@@ -122,32 +122,32 @@ impl Max for u16 {
 
 #[cfg(test)]
 mod tests {
-    use crate::Component;
+    use super::SubComponent;
 
     #[test]
-    fn component_members_work() {
-        let mut component: Component<u8> = Component::new(0);
+    fn sub_component_members_work() {
+        let mut sub_component = SubComponent::new(0_u8);
 
-        component.set(10);
-        (0..10).for_each(|_| component.increment());
-        (0..8).for_each(|_| component.decrement());
+        sub_component.set(10);
+        (0..10).for_each(|_| sub_component.increment());
+        (0..8).for_each(|_| sub_component.decrement());
 
-        assert_eq!(component.get(), 12);
+        assert_eq!(sub_component.get(), 12);
     }
 
     #[test]
-    fn component_can_underflow() {
-        let mut component: Component<u8> = Component::new(u8::MIN);
-        component.decrement();
+    fn sub_component_can_underflow() {
+        let mut sub_component = SubComponent::new(u8::MIN);
+        sub_component.decrement();
 
-        assert_eq!(component.get(), u8::MAX)
+        assert_eq!(sub_component.get(), u8::MAX)
     }
 
     #[test]
-    fn component_can_overflow() {
-        let mut component: Component<u8> = Component::new(u8::MAX);
-        component.increment();
+    fn sub_component_can_overflow() {
+        let mut sub_component = SubComponent::new(u8::MAX);
+        sub_component.increment();
 
-        assert_eq!(component.get(), u8::MIN)
+        assert_eq!(sub_component.get(), u8::MIN)
     }
 }
