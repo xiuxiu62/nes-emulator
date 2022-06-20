@@ -4,7 +4,9 @@ mod error;
 mod ram;
 #[macro_use]
 mod rom;
+mod bus;
 
+pub use bus::{Bus, BusRead, BusWrite};
 pub use component::Component;
 pub use cpu::Cpu;
 pub use error::{Error, Result};
@@ -13,6 +15,7 @@ pub use rom::Rom;
 
 #[macro_use]
 extern crate bitflags;
+
 #[macro_use]
 extern crate lazy_static;
 

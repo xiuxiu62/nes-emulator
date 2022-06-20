@@ -1,24 +1,18 @@
 #[derive(Debug)]
 pub struct Rom {
     inner: Vec<u8>,
-    len: Option<usize>,
+    len: usize,
 }
 
 impl Rom {
     pub fn new(inner: Vec<u8>) -> Self {
-        Self { inner, len: None }
+        let len = inner.len();
+
+        Self { inner, len }
     }
 
-    pub fn len(&mut self) -> usize {
-        match self.len {
-            Some(len) => len,
-            None => {
-                let len = self.inner.len();
-                self.len = Some(len);
-
-                len
-            }
-        }
+    pub fn len(&self) -> usize {
+        self.len
     }
 }
 
