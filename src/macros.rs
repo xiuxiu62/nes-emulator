@@ -12,4 +12,7 @@ macro_rules! rom {
     [$($byte:expr),*] => {
         Rom::new(vec![$($byte),*])
     };
+    [$value:expr; $count:expr] => {
+        Rom::new(vec![$value; $count])
+    };
 }

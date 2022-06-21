@@ -40,6 +40,12 @@ impl Write for Ram {
     }
 }
 
+impl AsRef<[u8; RAM_SIZE]> for Ram {
+    fn as_ref(&self) -> &[u8; RAM_SIZE] {
+        &self.0
+    }
+}
+
 impl Display for Ram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
