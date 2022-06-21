@@ -1,20 +1,22 @@
+use super::Bus;
+use crate::{
+    core::SubComponent,
+    error::{Error, Result},
+    io::{Read, Write},
+};
+use std::fmt::Display;
+
 mod addressing_mode;
 mod flags;
 mod message;
 mod opcode;
 
-use crate::{
-    components::{ram::RAM_SIZE, Ram, Rom, SubComponent},
-    error::{Error, Result},
-};
-use opcode::OPCODE_MAP;
-use std::fmt::Display;
-
 pub use addressing_mode::AddressingMode;
 pub use flags::CpuFlags;
 pub use message::CpuMessage;
+pub use opcode::{OpCode, OpCodeMap, OPCODE_MAP};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Cpu {
     pub(crate) register_a: SubComponent<u8>,
     pub(crate) register_x: SubComponent<u8>,
@@ -22,20 +24,33 @@ pub struct Cpu {
     pub(crate) program_counter: SubComponent<u16>,
     pub(crate) stack_pointer: SubComponent<u8>,
     pub(crate) status: CpuFlags,
-    pub(crate) memory: Ram,
+    pub(crate) bus: Bus,
 }
 
 impl Cpu {
-    pub fn load_rom(&mut self, rom: &Rom) {
-        self.load(0x8000, rom);
+    pub fn new(bus: Bus) -> Self {
+        Self {
+            register_a: SubComponent::default(),
+            register_x: SubComponent::default(),
+            register_y: SubComponent::default(),
+            program_counter: SubComponent::default(),
+            stack_pointer: SubComponent::default(),
+            status: CpuFlags::default(),
+            bus,
+        }
     }
 
-    pub fn load(&mut self, offset: u16, rom: &Rom) {
-        let data = rom.as_ref();
+    // pub fn load_rom(&'a mut self, rom: &'a Rom) {
+    //     self.bus.load_rom(rom);
+    // }
 
-        self.memory.load(offset, data);
+    pub fn load(&mut self) -> Result<()> {
+        let offset = 0x0600;
+
+        self.bus.load(offset)?;
         self.program_counter.set(offset);
-        self.mem_write_word(0xFFFC, offset);
+
+        Ok(())
     }
 
     pub fn run(&mut self) -> Result<()> {
@@ -47,10 +62,11 @@ impl Cpu {
         F: FnMut(&mut Cpu),
     {
         loop {
-            let code = self.mem_read_byte(self.program_counter.get());
+            let program_counter = self.program_counter.get();
+            let code = self.read_byte(program_counter)?;
 
             self.program_counter.increment();
-            let program_counter_state = self.program_counter.get();
+            let program_counter = self.program_counter.get();
             let opcode = OPCODE_MAP.get(&code).ok_or_else(|| {
                 Error::Unsupported(format!(r#"opcode "{code:#x}" is not supported"#))
             })?;
@@ -59,7 +75,7 @@ impl Cpu {
                 break;
             }
 
-            if program_counter_state == self.program_counter.get() {
+            if program_counter == self.program_counter.get() {
                 (0..(opcode.len() - 1) as u16).for_each(|_| self.program_counter.increment())
             }
 
@@ -69,41 +85,24 @@ impl Cpu {
         Ok(())
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self) -> Result<()> {
         self.register_a.reset();
         self.register_x.reset();
         self.register_y.reset();
         self.status.reset();
 
-        let start_addr = self.mem_read_word(0xFFFC);
+        let start_addr = self.read_word(0xFFFC)?;
         self.program_counter.set(start_addr);
+
+        Ok(())
     }
 
-    pub fn mem_dump(&self) -> [u8; RAM_SIZE] {
-        self.memory.dump()
+    fn set_carry_flag(&mut self) {
+        self.status.insert(CpuFlags::CARRY);
     }
 
-    pub fn mem_read_byte(&self, addr: u16) -> u8 {
-        self.memory.read(addr)
-    }
-
-    pub fn mem_write_byte(&mut self, addr: u16, byte: u8) {
-        self.memory.write(addr, byte);
-    }
-
-    pub fn mem_read_word(&self, addr: u16) -> u16 {
-        let lo = self.mem_read_byte(addr) as u16;
-        let hi = self.mem_read_byte(addr + 1) as u16;
-
-        hi << 8 | lo
-    }
-
-    pub fn mem_write_word(&mut self, addr: u16, word: u16) {
-        let lo = (word & 0xff) as u8;
-        let hi = (word >> 8) as u8;
-
-        self.mem_write_byte(addr, lo);
-        self.mem_write_byte(addr + 1, hi);
+    fn clear_carry_flag(&mut self) {
+        self.status.remove(CpuFlags::CARRY);
     }
 
     fn update_zero_flag(&mut self, result: u8) {
@@ -118,6 +117,18 @@ impl Cpu {
             0 => self.status.remove(CpuFlags::NEGATIVE),
             _ => self.status.insert(CpuFlags::NEGATIVE),
         };
+    }
+}
+
+impl Read for Cpu {
+    fn read_byte(&self, addr: u16) -> Result<u8> {
+        self.bus.read_byte(addr)
+    }
+}
+
+impl Write for Cpu {
+    fn write_byte(&mut self, addr: u16, byte: u8) -> Result<()> {
+        self.bus.write_byte(addr, byte)
     }
 }
 

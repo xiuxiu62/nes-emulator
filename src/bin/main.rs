@@ -1,5 +1,5 @@
 use nes_emulator::{
-    components::{Cpu, Rom},
+    core::{Bus, Cpu, Rom},
     rom,
 };
 
@@ -33,16 +33,27 @@ lazy_static! {
 }
 
 fn main() -> nes_emulator::error::Result<()> {
-    let cpu = run(&GAME_CODE)?;
-    println!("{cpu}");
+    let mut nes = Nes::new(&GAME_CODE)?;
+    nes.run()?;
+
+    println!("{}", nes.0);
 
     Ok(())
 }
 
-fn run(rom: &Rom) -> nes_emulator::error::Result<Cpu> {
-    let mut cpu = Cpu::default();
-    cpu.load_rom(rom);
-    cpu.run()?;
+struct Nes(Cpu);
 
-    Ok(cpu)
+impl Nes {
+    pub fn new(rom: &'static Rom) -> nes_emulator::error::Result<Self> {
+        let bus = Bus::new(rom);
+        let mut cpu = Cpu::new(bus);
+        cpu.load()?;
+
+        Ok(Self(cpu))
+    }
+
+    pub fn run(&mut self) -> nes_emulator::error::Result<()> {
+        // self.0.run_with_callback(|cpu| println!("{cpu}"))
+        self.0.run()
+    }
 }
