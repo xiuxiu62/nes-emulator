@@ -1,20 +1,16 @@
-use super::Bus;
 use crate::{
-    core::SubComponent,
+    core::{Bus, SubComponent, OPCODE_MAP},
     error::{Error, Result},
     io::{Read, Write},
 };
 use std::fmt::Display;
 
-mod addressing_mode;
 mod flags;
 mod message;
 mod opcode;
 
-pub use addressing_mode::AddressingMode;
 pub use flags::CpuFlags;
 pub use message::CpuMessage;
-pub use opcode::{OpCode, OpCodeMap, OPCODE_MAP};
 
 #[derive(Debug)]
 pub struct Cpu {

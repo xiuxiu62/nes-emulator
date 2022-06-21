@@ -1,6 +1,7 @@
 pub mod core;
 pub mod error;
 pub mod io;
+mod macros;
 mod trace;
 
 #[macro_use]

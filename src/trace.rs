@@ -1,20 +1,26 @@
-// use crate::components::{
-//     cpu::{OpCode, OpCodeMap, OPCODE_MAP},
-//     Cpu,
+// use crate::{
+//     core::{
+//         cpu::{AddressingMode, OpCodeMap, OPCODE_MAP},
+//         Cpu,
+//     },
+//     error::{Error, Result},
+//     io::Read,
 // };
-// use std::collections::HashMap;
 
-// pub fn trace(cpu: &mut Cpu) -> String {
-//     let ref opscodes: OpCodeMap = *OPCODE_MAP;
+// pub fn trace(cpu: &mut Cpu) -> Result<String> {
+//     let ref opcode_map: OpCodeMap = *OPCODE_MAP;
 
-//     let code = cpu.read_byte(cpu.program_counter);
-//     let ops = opscodes.get(&code).unwrap();
+//     let program_counter = cpu.program_counter.get();
+//     let code = cpu.read_byte(program_counter)?;
+//     let opcode = opcode_map
+//         .get(&code)
+//         .ok_or_else(|| Error::Unsupported(format!(r#"opcode "{code:#x}" is not supported"#)))?;
 
 //     let begin = cpu.program_counter;
 //     let mut hex_dump = vec![];
 //     hex_dump.push(code);
 
-//     let (mem_addr, stored_value) = match ops.mode {
+//     let (mem_addr, stored_value) = match opcode.mode {
 //         AddressingMode::Immediate | AddressingMode::NoneAddressing => (0, 0),
 //         _ => {
 //             let addr = cpu.get_absolute_address(&ops.mode, begin + 1);
@@ -28,8 +34,7 @@
 //             _ => String::from(""),
 //         },
 //         2 => {
-//             let address: u8 = cpu.mem_read(begin + 1);
-//             // let value = cpu.mem_read(address));
+//             let address = cpu.mem_read(begin + 1)?;
 //             hex_dump.push(address);
 
 //             match ops.mode {
@@ -123,11 +128,11 @@
 //         .trim()
 //         .to_string();
 
-//     format!(
+//     Ok(format!(
 //         "{:47} A:{:02x} X:{:02x} Y:{:02x} P:{:02x} SP:{:02x}",
 //         asm_str, cpu.register_a, cpu.register_x, cpu.register_y, cpu.status, cpu.stack_pointer,
 //     )
-//     .to_ascii_uppercase()
+//     .to_ascii_uppercase())
 // }
 
 // #[cfg(test)]

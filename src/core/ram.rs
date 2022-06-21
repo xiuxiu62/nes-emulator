@@ -1,16 +1,9 @@
 use crate::{
     error::Result,
     io::{Read, Write},
+    kb,
 };
 use std::fmt::Display;
-
-/// Converts KiloBytes to Bytes
-#[macro_export]
-macro_rules! kb {
-    ($kb: expr) => {
-        $kb * 1024
-    };
-}
 
 pub const RAM_SIZE: usize = kb!(2);
 

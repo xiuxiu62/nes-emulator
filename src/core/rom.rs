@@ -28,10 +28,3 @@ impl Read for Rom {
         Ok(self.0[addr as usize])
     }
 }
-
-#[macro_export]
-macro_rules! rom {
-    [$($byte:expr),*] => {
-        Rom::new(vec![$($byte),*])
-    };
-}
