@@ -50,12 +50,12 @@ impl Cpu {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        self.run_with_callback(|_| {})
+        self.run_with_callback(|_| Ok(()))
     }
 
     pub fn run_with_callback<F>(&mut self, mut callback: F) -> Result<()>
     where
-        F: FnMut(&mut Cpu),
+        F: FnMut(&mut Cpu) -> Result<()>,
     {
         loop {
             let program_counter = self.program_counter.get();
@@ -75,7 +75,7 @@ impl Cpu {
                 (0..(opcode.len() - 1) as u16).for_each(|_| self.program_counter.increment())
             }
 
-            callback(self)
+            callback(self)?;
         }
 
         Ok(())

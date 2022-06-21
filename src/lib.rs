@@ -4,6 +4,8 @@ pub mod io;
 mod macros;
 mod trace;
 
+pub use trace::trace;
+
 #[macro_use]
 extern crate bitflags;
 

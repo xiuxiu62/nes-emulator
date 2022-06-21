@@ -1,6 +1,6 @@
 use nes_emulator::{
     core::{Bus, Cpu, Rom},
-    rom,
+    rom, trace,
 };
 
 #[macro_use]
@@ -36,8 +36,6 @@ fn main() -> nes_emulator::error::Result<()> {
     let mut nes = Nes::new(&GAME_CODE)?;
     nes.run()?;
 
-    println!("{}", nes.0);
-
     Ok(())
 }
 
@@ -53,7 +51,10 @@ impl Nes {
     }
 
     pub fn run(&mut self) -> nes_emulator::error::Result<()> {
-        // self.0.run_with_callback(|cpu| println!("{cpu}"))
-        self.0.run()
+        self.0.run_with_callback(|cpu| {
+            println!("{}", trace(cpu)?);
+
+            Ok(())
+        })
     }
 }

@@ -1,7 +1,3 @@
-use crate::{
-    error::{Error, Result},
-    io::{Read, Write},
-};
 use std::collections::HashMap;
 
 use super::AddressingMode;
@@ -32,12 +28,20 @@ impl OpCode {
         }
     }
 
+    pub fn code(&self) -> u8 {
+        self.code
+    }
+
+    pub fn mnemonic(&self) -> &str {
+        self.mnemonic
+    }
+
     pub fn len(&self) -> u8 {
         self.len
     }
 
-    pub fn code(&self) -> u8 {
-        self.code
+    fn cycles(&self) -> u8 {
+        self.cycles
     }
 
     pub fn mode(&self) -> AddressingMode {

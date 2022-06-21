@@ -632,4 +632,58 @@ impl Cpu {
             ))),
         }
     }
+
+    pub fn get_absolute_address(&self, mode: &AddressingMode, addr: u16) -> Result<u16> {
+        match mode {
+            AddressingMode::ZeroPage => Ok(self.read_byte(addr)? as u16),
+            AddressingMode::Absolute => self.read_word(addr),
+            AddressingMode::ZeroPageX => {
+                let pos = self.read_byte(addr)?;
+                let addr = pos.wrapping_add(self.register_x.get()) as u16;
+
+                Ok(addr)
+            }
+            AddressingMode::ZeroPageY => {
+                let pos = self.read_byte(addr)?;
+                let addr = pos.wrapping_add(self.register_y.get()) as u16;
+
+                Ok(addr)
+            }
+            AddressingMode::AbsoluteX => {
+                let base = self.read_word(addr)?;
+                let addr = base.wrapping_add(self.register_x.get() as u16);
+
+                Ok(addr)
+            }
+            AddressingMode::AbsoluteY => {
+                let base = self.read_word(addr)?;
+                let addr = base.wrapping_add(self.register_y.get() as u16);
+
+                Ok(addr)
+            }
+            AddressingMode::IndirectX => {
+                let base = self.read_byte(addr)?;
+
+                let ptr: u8 = base.wrapping_add(self.register_x.get());
+                let lo = self.read_byte(ptr as u16)?;
+                let hi = self.read_byte(ptr.wrapping_add(1) as u16)?;
+
+                Ok((hi as u16) << 8 | (lo as u16))
+            }
+            AddressingMode::IndirectY => {
+                let base = self.read_byte(addr)?;
+
+                let lo = self.read_byte(base as u16)?;
+                let hi = self.read_byte((base as u8).wrapping_add(1) as u16)?;
+                let deref_base = (hi as u16) << 8 | (lo as u16);
+                let deref = deref_base.wrapping_add(self.register_y.get() as u16);
+
+                Ok(deref)
+            }
+            _ => Err(Error::Unsupported(format!(
+                "mode {:?} is not supported",
+                mode
+            ))),
+        }
+    }
 }
