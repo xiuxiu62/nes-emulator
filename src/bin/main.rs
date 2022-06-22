@@ -5,7 +5,7 @@ use nes_emulator::{
     trace,
 };
 
-const TEST_DATA_DIRECTORY: &'static str = "test_data";
+const TEST_DATA_DIRECTORY: &str = "test_data";
 
 fn main() -> nes_emulator::error::Result<()> {
     let filename = format!("./{TEST_DATA_DIRECTORY}/nestest.nes");
