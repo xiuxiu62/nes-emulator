@@ -4,11 +4,11 @@ use super::AddressingMode;
 
 #[allow(unused)]
 pub struct OpCode {
-    code: u8,
-    mnemonic: &'static str,
-    len: u8,
-    cycles: u8,
-    mode: AddressingMode,
+    pub code: u8,
+    pub mnemonic: &'static str,
+    pub len: u8,
+    pub cycles: u8,
+    pub mode: AddressingMode,
 }
 
 impl OpCode {

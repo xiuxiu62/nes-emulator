@@ -8,15 +8,22 @@ use crate::{
 };
 use register::PpuRegisters;
 
+#[derive(Debug)]
 pub struct Ppu {
     character_rom: Rom,
     mirroring: Mirroring,
     registers: PpuRegisters,
     vram: Ram,
-    data_buffer: SubComponent<u8>,
+
     oam_address: SubComponent<u8>,
     oam_data: [u8; 256],
     palette_table: [u8; 32],
+
+    data_buffer: SubComponent<u8>,
+
+    scanline: SubComponent<u16>,
+    cycles: SubComponent<usize>,
+    pub nmi_interrupt: Option<u8>,
 }
 
 impl Default for Ppu {
@@ -32,10 +39,13 @@ impl Ppu {
             mirroring,
             registers: PpuRegisters::default(),
             vram: Ram::default(),
-            data_buffer: SubComponent::default(),
             oam_address: SubComponent::default(),
             oam_data: [0; 64 * 4],
             palette_table: [0; 32],
+            data_buffer: SubComponent::default(),
+            scanline: SubComponent::default(),
+            cycles: SubComponent::default(),
+            nmi_interrupt: None,
         }
     }
 
@@ -59,16 +69,56 @@ impl Ppu {
             .add(self.registers.control.vram_address_increment());
     }
 
-    fn write_to_ctrl(&mut self, value: u8) {
-        let before_nmi_status = self.registers.control.generate_vblank_nmi();
-        self.registers.control.update(value);
+    pub fn tick(&mut self, cycles: usize) -> bool {
+        self.cycles.wrapping_add(cycles);
+        if self.cycles.get() >= 341 {
+            self.cycles.wrapping_sub(341);
+            self.scanline.increment();
+
+            if self.scanline.get() == 241 {
+                self.registers.status.set_vblank_status(true);
+                self.registers.status.set_sprite_zero_hit(false);
+
+                if self.registers.control.generate_vblank_nmi() {
+                    self.nmi_interrupt = Some(1);
+                }
+            }
+
+            if self.scanline.get() >= 262 {
+                self.scanline.set(0);
+                self.nmi_interrupt = None;
+
+                self.registers.status.set_sprite_zero_hit(false);
+                self.registers.status.reset_vblank_status();
+
+                return true;
+            }
+        }
+
+        false
     }
 
-    fn write_to_mask(&mut self, value: u8) {
+    pub fn poll_nmi_interrupt(&mut self) -> Option<u8> {
+        self.nmi_interrupt.take()
+    }
+
+    pub fn write_to_ctrl(&mut self, value: u8) {
+        let before_nmi_status = self.registers.control.generate_vblank_nmi();
+        self.registers.control.update(value);
+
+        if !before_nmi_status
+            && self.registers.control.generate_vblank_nmi()
+            && self.registers.status.is_in_vblank()
+        {
+            self.nmi_interrupt = Some(1);
+        }
+    }
+
+    pub fn write_to_mask(&mut self, value: u8) {
         self.registers.mask.update(value);
     }
 
-    fn read_status(&mut self) -> u8 {
+    pub fn read_status(&mut self) -> u8 {
         let data = self.registers.status.snapshot();
         self.registers.status.reset_vblank_status();
         self.registers.address.reset_latch();
@@ -77,28 +127,28 @@ impl Ppu {
         data
     }
 
-    fn write_to_oam_addr(&mut self, value: u8) {
+    pub fn write_to_oam_addr(&mut self, value: u8) {
         self.oam_address.set(value);
     }
 
-    fn write_to_oam_data(&mut self, value: u8) {
+    pub fn write_to_oam_data(&mut self, value: u8) {
         self.oam_data[self.oam_address.get() as usize] = value;
         self.oam_address.wrapping_add(1);
     }
 
-    fn read_oam_data(&self) -> u8 {
+    pub fn read_oam_data(&self) -> u8 {
         self.oam_data[self.oam_address.get() as usize]
     }
 
-    fn write_to_scroll(&mut self, value: u8) {
+    pub fn write_to_scroll(&mut self, value: u8) {
         self.registers.scroll.write(value);
     }
 
-    fn write_to_ppu_addr(&mut self, value: u8) {
+    pub fn write_to_ppu_addr(&mut self, value: u8) {
         self.registers.address.update(value);
     }
 
-    fn write_to_data(&mut self, value: u8) -> Result<()> {
+    pub fn write_to_data(&mut self, value: u8) -> Result<()> {
         let addr = self.registers.address.get();
         match addr {
             0..=0x1fff => println!("attempt to write to chr rom space {}", addr),
@@ -126,7 +176,7 @@ impl Ppu {
         Ok(())
     }
 
-    fn read_data(&mut self) -> Result<u8> {
+    pub fn read_data(&mut self) -> Result<u8> {
         let addr = self.registers.address.get();
         self.increment_vram_addr();
 

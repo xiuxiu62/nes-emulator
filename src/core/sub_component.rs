@@ -96,29 +96,25 @@ pub trait Max {
     fn max() -> Self;
 }
 
-impl Min for u8 {
-    fn min() -> u8 {
-        u8::MIN
+macro_rules! impl_min_max {
+    [$($type:ty),*] => {
+        $(
+            impl Min for $type {
+                fn min() -> $type {
+                    <$type>::MIN
+                }
+            }
+
+            impl Max for $type {
+                fn max() -> $type {
+                    <$type>::MAX
+                }
+            }
+        )*
     }
 }
 
-impl Max for u8 {
-    fn max() -> u8 {
-        u8::MAX
-    }
-}
-
-impl Min for u16 {
-    fn min() -> u16 {
-        u16::MIN
-    }
-}
-
-impl Max for u16 {
-    fn max() -> u16 {
-        u16::MAX
-    }
-}
+impl_min_max![usize, u8, u16];
 
 #[cfg(test)]
 mod tests {

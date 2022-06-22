@@ -27,7 +27,7 @@ impl Default for Ram {
 }
 
 impl Read for Ram {
-    fn read_byte(&self, addr: u16) -> Result<u8> {
+    fn read_byte(&mut self, addr: u16) -> Result<u8> {
         Ok(self.0[addr as usize])
     }
 }

@@ -3,6 +3,7 @@ use crate::{
     error::{Error, Result},
     kb,
 };
+use std::path::Path;
 
 const NES_TAG: [u8; 4] = [0x4E, 0x45, 0x53, 0x1A];
 const PROGRAM_ROM_PAGE_SIZE: usize = kb!(16);
@@ -23,7 +24,7 @@ pub struct Cartridge {
 }
 
 impl Cartridge {
-    pub fn new(data: &Vec<u8>) -> Result<Self> {
+    pub fn new(data: Vec<u8>) -> Result<Self> {
         if data[0..4] != NES_TAG {
             return Err(Error::Unsupported(
                 "File is not in iNES file format".to_owned(),
@@ -81,5 +82,15 @@ impl Cartridge {
 
     pub fn screen_mirroring(&self) -> Mirroring {
         self.screen_mirroring
+    }
+}
+
+impl TryFrom<&Path> for Cartridge {
+    type Error = crate::error::Error;
+
+    fn try_from(path: &Path) -> Result<Self> {
+        let data = std::fs::read(path)?;
+
+        Self::new(data)
     }
 }

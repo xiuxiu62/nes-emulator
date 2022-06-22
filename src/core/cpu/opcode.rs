@@ -578,7 +578,7 @@ impl Cpu {
         self.update_negative_flag(result);
     }
 
-    fn get_operand_address(&self, mode: &AddressingMode) -> Result<u16> {
+    fn get_operand_address(&mut self, mode: &AddressingMode) -> Result<u16> {
         match mode {
             AddressingMode::Immediate => Ok(self.program_counter.get()),
             AddressingMode::ZeroPage => Ok(self.read_byte(self.program_counter.get())? as u16),
@@ -633,7 +633,7 @@ impl Cpu {
         }
     }
 
-    pub fn get_absolute_address(&self, mode: &AddressingMode, addr: u16) -> Result<u16> {
+    pub fn get_absolute_address(&mut self, mode: &AddressingMode, addr: u16) -> Result<u16> {
         match mode {
             AddressingMode::ZeroPage => Ok(self.read_byte(addr)? as u16),
             AddressingMode::Absolute => self.read_word(addr),
@@ -685,5 +685,9 @@ impl Cpu {
                 mode
             ))),
         }
+    }
+
+    fn page_cross(address_1: u16, address_2: u16) -> bool {
+        address_1 & 0xFF00 != address_2 & 0xFF00
     }
 }

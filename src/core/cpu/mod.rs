@@ -58,6 +58,12 @@ impl Cpu {
         F: FnMut(&mut Cpu) -> Result<()>,
     {
         loop {
+            if self.bus.poll_nmi_status().is_some() {
+                // self.interrupt(interrupt::NMI)
+            }
+
+            callback(self)?;
+
             let program_counter = self.program_counter.get();
             let code = self.read_byte(program_counter)?;
 
@@ -71,11 +77,11 @@ impl Cpu {
                 break;
             }
 
+            self.bus.tick(opcode.cycles as usize);
+
             if program_counter == self.program_counter.get() {
                 (0..(opcode.len() - 1) as u16).for_each(|_| self.program_counter.increment())
             }
-
-            callback(self)?;
         }
 
         Ok(())
@@ -117,7 +123,7 @@ impl Cpu {
 }
 
 impl Read for Cpu {
-    fn read_byte(&self, addr: u16) -> Result<u8> {
+    fn read_byte(&mut self, addr: u16) -> Result<u8> {
         self.bus.read_byte(addr)
     }
 }
