@@ -12,6 +12,11 @@ mod opcode;
 pub use flags::CpuFlags;
 pub use message::CpuMessage;
 
+use super::Cartridge;
+
+pub const STACK_START_ADDR: u16 = 0x0100;
+pub const STACK_RESET: u8 = 0xFD;
+
 #[derive(Debug)]
 pub struct Cpu {
     pub(crate) register_a: SubComponent<u8>,
@@ -30,15 +35,15 @@ impl Cpu {
             register_x: SubComponent::default(),
             register_y: SubComponent::default(),
             program_counter: SubComponent::default(),
-            stack_pointer: SubComponent::default(),
+            stack_pointer: SubComponent::new(STACK_RESET),
             status: CpuFlags::default(),
             bus,
         }
     }
 
-    // pub fn load_rom(&'a mut self, rom: &'a Rom) {
-    //     self.bus.load_rom(rom);
-    // }
+    pub fn load_cartridge(&mut self, cartridge: &Cartridge) {
+        self.bus.load_cartridge(cartridge);
+    }
 
     pub fn load(&mut self) -> Result<()> {
         let offset = 0x0600;

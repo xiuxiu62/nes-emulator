@@ -10,8 +10,8 @@ use register::PpuRegisters;
 
 #[derive(Debug)]
 pub struct Ppu {
-    character_rom: Rom,
-    mirroring: Mirroring,
+    pub character_rom: Rom,
+    pub mirroring: Mirroring,
     registers: PpuRegisters,
     vram: Ram,
 

@@ -1,3 +1,5 @@
+use std::mem;
+
 use super::{Cartridge, Ppu, Ram, Rom, SubComponent};
 use crate::{
     error::{Error, Result},
@@ -39,6 +41,10 @@ impl Bus {
             mmc: (),
             cycles: SubComponent::default(),
         }
+    }
+
+    pub fn load_cartridge(&mut self, cartridge: &Cartridge) {
+        let _ = mem::replace(self, Self::new(cartridge));
     }
 
     pub fn load(&mut self, offset: u16) -> Result<()> {

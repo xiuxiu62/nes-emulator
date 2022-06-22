@@ -9,7 +9,7 @@ impl ScrollRegister {
     pub fn write(&mut self, data: u8) {
         match self.latch {
             true => self.y = data,
-            flase => self.x = data,
+            false => self.x = data,
         };
 
         self.latch = !self.latch;

@@ -8,6 +8,7 @@ pub enum Error {
     Unsupported(String),
     Uninitialized(String),
     ExpectedParameter(u16),
+    Io(std::io::Error),
 }
 
 impl Display for Error {
@@ -17,3 +18,9 @@ impl Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
+    }
+}
