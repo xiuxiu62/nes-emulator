@@ -8,7 +8,7 @@ use crate::{
 };
 
 pub fn trace(cpu: &mut Cpu) -> Result<String> {
-    let ref opcode_map: OpCodeMap = *OPCODE_MAP;
+    let opcode_map: &OpCodeMap = &(*OPCODE_MAP);
 
     let program_counter = cpu.program_counter.get();
     let code = cpu.read_byte(program_counter)?;
@@ -30,7 +30,7 @@ pub fn trace(cpu: &mut Cpu) -> Result<String> {
 
     let tmp = match opcode.len() {
         1 => match opcode.code() {
-            0x0a | 0x4a | 0x2a | 0x6a => format!("A "),
+            0x0a | 0x4a | 0x2a | 0x6a => "A ".to_string(),
             _ => String::from(""),
         },
         2 => {
