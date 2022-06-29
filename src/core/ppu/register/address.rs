@@ -21,7 +21,7 @@ impl AddressRegister {
         };
 
         if self.get() > 0x3FFF {
-            self.set(self.get() & 0xFFFF);
+            self.set(self.get());
         }
 
         self.latch = !self.latch;
@@ -35,7 +35,7 @@ impl AddressRegister {
         };
 
         if self.get() > 0x3FFF {
-            self.set(self.get() & 0xFFFF)
+            self.set(self.get())
         }
     }
 

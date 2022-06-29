@@ -40,6 +40,10 @@ impl OpCode {
         self.len
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     fn cycles(&self) -> u8 {
         self.cycles
     }

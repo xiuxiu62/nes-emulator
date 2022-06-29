@@ -8,7 +8,7 @@ use nes_emulator::{
 const TEST_DATA_DIRECTORY: &str = "test_data";
 
 fn main() -> nes_emulator::error::Result<()> {
-    let filename = format!("./{TEST_DATA_DIRECTORY}/nestest.nes");
+    let filename = format!("./{TEST_DATA_DIRECTORY}/cpu_dummy_reads.nes");
     let path = Path::new(&filename);
     let cartridge = Cartridge::try_from(path)?;
     // let cartridge = Cartridge::new(vec![

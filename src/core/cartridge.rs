@@ -9,7 +9,7 @@ const NES_TAG: [u8; 4] = [0x4E, 0x45, 0x53, 0x1A];
 const PROGRAM_ROM_PAGE_SIZE: usize = kb!(16);
 const CHARACTER_ROM_PAGE_SIZE: usize = kb!(8);
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mirroring {
     Vertical,
     Horizontal,

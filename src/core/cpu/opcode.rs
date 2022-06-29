@@ -154,7 +154,7 @@ impl Cpu {
 
             // UNOFFICIAL OPCODES
             // NOP read
-            0xc7 | 0xd7 | 0xCF | 0xdF | 0xdb | 0xd3 | 0xc3 => {
+            0xC7 | 0xD7 | 0xCF | 0xDF | 0xDB | 0xD3 | 0xC3 => {
                 let (addr, _) = self.get_operand_address(&opcode.mode)?;
                 let byte = self.read_byte(addr)?.wrapping_add(1);
                 self.write_byte(addr, byte)?;

@@ -107,30 +107,30 @@ impl Write for Bus {
             0x2000 => {
                 self.ppu.write_to_ctrl(byte);
                 Ok(())
-            },
+            }
             0x2001 => {
                 self.ppu.write_to_mask(byte);
                 Ok(())
-            },
+            }
             0x2002 => Err(Error::Illegal(format!(
                 "attempted to write to PPU status register: {addr:#x}"
             ))),
             0x2003 => {
                 self.ppu.write_to_oam_addr(byte);
                 Ok(())
-            },
+            }
             0x2004 => {
                 self.ppu.write_to_oam_data(byte);
                 Ok(())
-            },
+            }
             0x2005 => {
                 self.ppu.write_to_scroll(byte);
                 Ok(())
-            },
+            }
             0x2006 => {
                 self.ppu.write_to_ppu_addr(byte);
                 Ok(())
-            },
+            }
             0x2007 => self.ppu.write_to_data(byte),
             0x2008..=PPU_REGISTERS_MIRRORS_END => {
                 let mirror_down_addr = addr & 0b0010_0000_0000_0111;
